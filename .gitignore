@@ -218,3 +218,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project datasets and local outputs
+data/raw/*
+!data/raw/README.md
+data/processed/
+*.zip
+.env.*
+excel_output/*
