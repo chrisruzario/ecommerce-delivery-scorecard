@@ -4,7 +4,7 @@
 
 ## Status
 
-Phase 1 is complete: Python/pandas data inspection, in-memory cleaning, delivery KPIs and customer-state analysis. Seller/category analysis, PostgreSQL, automated Excel reporting and Power BI are planned, not yet implemented.
+Python inspection and initial PostgreSQL analysis are complete: cleaned-table ingestion, five primary keys, four foreign keys, join indexes, an order-performance view, headline KPIs and customer-state analysis. Monthly trends, seller/category analysis, automated Excel reporting and Power BI remain planned.
 
 ## Results
 
@@ -69,7 +69,29 @@ python python/01_inspect_data.py
 
 Alternatively, open the saved script in Spyder and run the whole file with F5. Paths are resolved relative to the script, so the working directory does not need to be changed.
 
-The script prints quality checks, KPI results and the ten states with the highest late rates. Cleaned DataFrames remain in memory; it does not write cleaned CSVs, database tables or reports yet. Original CSVs are unchanged.
+The inspection script prints quality checks, KPI results and the ten states with the highest late rates. Its cleaned DataFrames remain in memory; the separate loader below persists them to PostgreSQL. Original CSVs are unchanged.
+
+## PostgreSQL setup and execution
+
+1. Install PostgreSQL and create an empty database named `ecommerce_delivery`.
+2. Install `requirements.txt` in your active Python environment.
+3. From the repository root in a **terminal/Anaconda Prompt**, run:
+
+```bash
+python python/02_load_database.py
+```
+
+The loader connects to localhost:5432 as postgres and asks for the database password. Do not put passwords in scripts or commits. Use a terminal: Spyder's QtConsole may display password input.
+
+4. In pgAdmin, connect the Query Tool to `ecommerce_delivery` and execute the SQL files in numbered order, from `00` through `03`.
+
+The loader creates customers, products, orders, order_items and payments in the public schema. Products has 27,451 rows; each other table has 89,316. It commits all five tables together only after row-count verification. Existing tables cause the initial loader to stop without overwriting them. The keys/indexes script is also a one-time setup; do not rerun it after success.
+
+The view preserves all orders and uses NULL delivery metrics for ineligible orders. KPI queries explicitly filter the eligibility flag. Dates are compared as calendar dates, matching Python.
+
+### Verification checkpoint
+
+The local PostgreSQL load and nine key constraints were confirmed successful. The author confirmed the SQL headline results match Python: 87,422 eligible orders, 5,604 late orders, 93.59% on-time, 12.43 delivery days and 10.45 late-delay days. The state query was run locally; its reference results are in `docs/phase1_output.txt`. This is manual local validation, not automated database CI.
 
 ## Data quality and validation
 
@@ -83,7 +105,7 @@ The script prints quality checks, KPI results and the ten states with the highes
 - Confirmed all checked foreign-key references match.
 - Customer join preserved 87,422 eligible rows, with no unmatched customers.
 
-This dataset has one item and one payment row per order. That is an observed property of these files, not a general e-commerce modelling assumption. Most checks currently report counts rather than enforcing database constraints.
+This dataset has one item and one payment row per order. That is an observed property of these files, not a general e-commerce modelling assumption. Python checks report counts; the SQL setup additionally enforces the five primary keys and four foreign-key relationships.
 
 ## Limitations
 
@@ -96,14 +118,18 @@ Payment values were observed during preliminary inspection to differ from item p
 | Path | Purpose |
 |---|---|
 | `python/01_inspect_data.py` | Inspection, cleaning, delivery KPIs, state analysis and relationship checks |
-| `requirements.txt` | pandas dependency used for verification |
+| `python/02_load_database.py` | Initial transactional PostgreSQL load with row-count verification |
+| `sql/00_keys_and_indexes.sql` | Primary keys, foreign keys and join indexes |
+| `sql/01_order_performance_view.sql` | One-row-per-order delivery view |
+| `sql/02_delivery_scorecard.sql` | SQL headline KPI query |
+| `sql/03_state_performance.sql` | State comparison with a minimum order count |
+| `requirements.txt` | Python analysis and database dependencies |
 | `data/raw/README.md` | Local dataset placement instructions |
 | `docs/phase1_output.txt` | Reproduced console results |
 
 ## Next steps
 
-- Add a persistent quality log and reproducible database ingestion.
-- Build PostgreSQL tables with keys and an order-performance view.
+- Add a persistent quality log and a controlled refresh process for existing database tables.
 - Analyse monthly trends, sellers and product categories in SQL.
 - Generate an automated Excel scorecard.
 - Build a Power BI dashboard and document additional findings.
