@@ -226,3 +226,4 @@ data/processed/
 *.zip
 .env.*
 excel_output/*
+!excel_output/delivery_scorecard.xlsx

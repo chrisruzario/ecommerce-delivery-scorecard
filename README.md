@@ -4,7 +4,7 @@
 
 ## Status
 
-Python inspection and initial PostgreSQL analysis are complete: cleaned-table ingestion, five primary keys, four foreign keys, join indexes, an order-performance view, headline KPIs and customer-state analysis. Monthly trends, seller/category analysis, automated Excel reporting and Power BI remain planned.
+Python inspection and initial PostgreSQL analysis are complete: cleaned-table ingestion, five primary keys, four foreign keys, join indexes, an order-performance view, headline KPIs and customer-state analysis. Monthly trends with a weighted three-month rolling rate, seller/category analysis and automated Excel reporting are also complete. Power BI remains planned.
 
 ## Results
 
@@ -26,6 +26,8 @@ Computed from the dataset's training files using the included script.
 - Overall on-time delivery exceeds the illustrative target, but late deliveries average 10.45 calendar days overdue.
 - AL has the highest late rate among states with at least 100 eligible orders: 20.62% (67 of 325 orders).
 - RJ has 1,275 late orders out of 11,249 eligible orders, a late rate of 11.33%. It accounts for 22.75% of all late orders in this sample. Both rate and volume matter when prioritising further investigation.
+- March 2018 has the lowest observed monthly on-time rate: 82.24% across 6,352 eligible orders. The three-month rolling rate is 87.63%.
+- Office furniture has a 10.98% late rate (58 of 528 orders), with average delivery time of 22.23 days and average late delay of 15.12 days.
 - These comparisons describe associations, not the causes of delays or seller responsibility.
 
 ## KPI dictionary
@@ -83,7 +85,7 @@ python python/02_load_database.py
 
 The loader connects to localhost:5432 as postgres and asks for the database password. Do not put passwords in scripts or commits. Use a terminal: Spyder's QtConsole may display password input.
 
-4. In pgAdmin, connect the Query Tool to `ecommerce_delivery` and execute the SQL files in numbered order, from `00` through `03`.
+4. In pgAdmin, connect the Query Tool to `ecommerce_delivery` and execute the SQL files in numbered order, from `00` through `06`.
 
 The loader creates customers, products, orders, order_items and payments in the public schema. Products has 27,451 rows; each other table has 89,316. It commits all five tables together only after row-count verification. Existing tables cause the initial loader to stop without overwriting them. The keys/indexes script is also a one-time setup; do not rerun it after success.
 
@@ -92,6 +94,24 @@ The view preserves all orders and uses NULL delivery metrics for ineligible orde
 ### Verification checkpoint
 
 The local PostgreSQL load and nine key constraints were confirmed successful. The author confirmed the SQL headline results match Python: 87,422 eligible orders, 5,604 late orders, 93.59% on-time, 12.43 delivery days and 10.45 late-delay days. The state query was run locally; its reference results are in `docs/phase1_output.txt`. This is manual local validation, not automated database CI.
+
+## Automated Excel reporting
+
+[Download the sample workbook](excel_output/delivery_scorecard.xlsx).
+
+After completing the database setup, run this from the repository root in a terminal:
+
+```bash
+python python/03_excel_report.py
+```
+
+Enter the PostgreSQL password when prompted. The script queries the database view and regenerates `excel_output/delivery_scorecard.xlsx`. Close the workbook in Excel before rerunning: the output is overwritten. No password is stored in the script.
+
+The workbook contains Summary, Monthly, States, Sellers and Categories sheets, including a monthly chart, filters, frozen panes and conditional target indicators. The on-time target is 90%; amber starts at 85%. Both are illustrative. Other headline KPIs have no assigned target.
+
+Monthly rates group by purchase month. The rolling rate combines order counts across the current and previous two calendar months rather than averaging rounded percentages. Months without eligible orders are absent; early windows can be partial. Ranking sheets include all groups with at least 100 eligible orders, while the standalone ranking SQL files return the top ten.
+
+The report reads a consistent, read-only database snapshot and checks that monthly eligible/on-time counts reconcile with the headline counts. The uploaded sample was inspected: 87,422 eligible orders, 5,604 late orders, five sheets, one chart and no cached Excel error cells. Summary and monthly chart layouts were checked in Excel screenshots. The script passed a syntax check; the database-backed run was performed on the author's computer, not in CI.
 
 ## Data quality and validation
 
@@ -123,13 +143,16 @@ Payment values were observed during preliminary inspection to differ from item p
 | `sql/01_order_performance_view.sql` | One-row-per-order delivery view |
 | `sql/02_delivery_scorecard.sql` | SQL headline KPI query |
 | `sql/03_state_performance.sql` | State comparison with a minimum order count |
-| `requirements.txt` | Python analysis and database dependencies |
+| `python/03_excel_report.py` | Regenerate the Excel workbook from PostgreSQL |
+| `sql/04_monthly_performance.sql` | Monthly and weighted three-month on-time rates |
+| `sql/05_seller_performance.sql` | Seller late-rate ranking |
+| `sql/06_category_performance.sql` | Category performance ranking |
+| `excel_output/delivery_scorecard.xlsx` | Sample generated report |
+| `requirements.txt` | Analysis, database and Excel dependencies |
 | `data/raw/README.md` | Local dataset placement instructions |
 | `docs/phase1_output.txt` | Reproduced console results |
 
 ## Next steps
 
 - Add a persistent quality log and a controlled refresh process for existing database tables.
-- Analyse monthly trends, sellers and product categories in SQL.
-- Generate an automated Excel scorecard.
 - Build a Power BI dashboard and document additional findings.
