@@ -4,7 +4,37 @@
 
 ## Status
 
-Python inspection and initial PostgreSQL analysis are complete: cleaned-table ingestion, five primary keys, four foreign keys, join indexes, an order-performance view, headline KPIs and customer-state analysis. Monthly trends with a weighted three-month rolling rate, seller/category analysis and automated Excel reporting are also complete. Power BI remains planned.
+Python inspection and initial PostgreSQL analysis are complete: cleaned-table ingestion, five primary keys, four foreign keys, join indexes, an order-performance view, headline KPIs and customer-state analysis. Monthly trends with a weighted three-month rolling rate, seller/category analysis and automated Excel reporting are also complete. The three-page Power BI dashboard is complete, with executive, state, and seller/category previews included below.
+
+## Power BI dashboard
+
+The screenshots below show the completed report. The PBIX file is not currently included in this repository.
+
+### Executive Scorecard
+
+Headline delivery KPIs, a customer-state slicer, target status, and monthly on-time performance alongside a rolling three-month rate and the illustrative 90% target.
+
+![Executive scorecard with delivery KPIs and monthly on-time performance](docs/executive_scorecard.png)
+
+### State Performance
+
+States ranked by late-delivery rate, with eligible-order volume, late orders and average delivery days alongside the chart. Only states with at least 100 eligible orders are shown.
+
+![State performance ranked by late-delivery rate](docs/state_performance.png)
+
+The displayed state table totals **87,244 eligible orders and 5,594 late orders**. These totals cover the qualifying states only; the executive scorecard covers all **87,422 eligible orders and 5,604 late orders**. The difference is the minimum-volume filter, not a reconciliation error.
+
+### Seller & Category Performance
+
+A seller ranking and category comparison with a category slicer. Sellers and categories must each have at least 100 eligible orders within the selected filters. Table totals reflect the qualifying seller population, so they can differ from the executive totals.
+
+![Seller ranking and category late-delivery rates](docs/seller_category_performance.png)
+
+These views help prioritise investigation: AL has the highest qualifying state late rate, RJ combines a high rate with substantial late-order volume, and office furniture has the highest category late rate shown. A high late rate alone does not establish the cause of delays or seller responsibility.
+
+### Report validation
+
+The screenshots are from the author's completed report. The executive KPIs match the Results table below. State and seller/category tables intentionally apply minimum-volume filters. The PBIX archive and its three page definitions were checked locally; refresh against a second environment has not been tested.
 
 ## Results
 
@@ -21,7 +51,7 @@ Computed from the dataset's training files using the included script.
 | Illustrative on-time target | 90% |
 | Gap to target | +3.59 percentage points |
 
-### Initial findings
+### Key findings
 
 - Overall on-time delivery exceeds the illustrative target, but late deliveries average 10.45 calendar days overdue.
 - AL has the highest late rate among states with at least 100 eligible orders: 20.62% (67 of 325 orders).
@@ -148,6 +178,9 @@ Payment values were observed during preliminary inspection to differ from item p
 | `sql/05_seller_performance.sql` | Seller late-rate ranking |
 | `sql/06_category_performance.sql` | Category performance ranking |
 | `excel_output/delivery_scorecard.xlsx` | Sample generated report |
+| `docs/executive_scorecard.png` | Executive dashboard preview |
+| `docs/state_performance.png` | State dashboard preview |
+| `docs/seller_category_performance.png` | Seller/category dashboard preview |
 | `requirements.txt` | Analysis, database and Excel dependencies |
 | `data/raw/README.md` | Local dataset placement instructions |
 | `docs/phase1_output.txt` | Reproduced console results |
@@ -155,4 +188,4 @@ Payment values were observed during preliminary inspection to differ from item p
 ## Next steps
 
 - Add a persistent quality log and a controlled refresh process for existing database tables.
-- Build a Power BI dashboard and document additional findings.
+- Validate the Power BI refresh workflow on a second environment and document any connection changes required.
